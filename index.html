@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ky" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Алиананын Жентек тоюна чакыруу!</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Marck+Script&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Canvas Confetti for Interactive RSVP -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#FFFEFA',
+                            100: '#FAF6F0',
+                            200: '#F5ECE1',
+                            300: '#EBDCCE'
+                        },
+                        gold: {
+                            100: '#F9F1DC',
+                            300: '#E2C889',
+                            500: '#D4AF37',
+                            600: '#B8860B',
+                            700: '#996515'
+                        },
+                        blush: {
+                            50: '#FFF5F5',
+                            100: '#FDF0ED',
+                            200: '#F8E1DC',
+                            300: '#EECECA',
+                            400: '#E2B3AE'
+                        },
+                        charcoal: '#332D2B'
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                        sans: ['"Montserrat"', 'sans-serif'],
+                        script: ['"Marck Script"', 'cursive']
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 30px -10px rgba(212, 175, 55, 0.15)',
+                        'card': '0 15px 35px rgba(184, 134, 11, 0.08)',
+                        'glow': '0 0 25px rgba(212, 175, 55, 0.3)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .animate-float {
+            animation: float 5s ease-in-out infinite;
+        }
+
+        .animate-pulse-glow {
+            animation: pulseGlow 4s ease-in-out infinite;
+        }
+
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #B8860B 0%, #D4AF37 40%, #AA771C 70%, #D4AF37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: shimmer 6s linear infinite;
+        }
+
+        .gold-border {
+            border-image: linear-gradient(to bottom right, #D4AF37, #F9F1DC, #B8860B) 1;
+        }
+
+        /* Subtle Kyrgyz Pattern Watermark */
+        .kyrgyz-pattern-bg {
+            background-color: #FAF6F0;
+            background-image: radial-gradient(#D4AF37 0.75px, transparent 0.75px), radial-gradient(#D4AF37 0.75px, #FAF6F0 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            background-opacity: 0.05;
+        }
+
+        /* Hide scrollbars gracefully */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+
+        .envelope-flap {
+            transform-origin: top;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 30;
+        }
+
+        .envelope-flap.open {
+            transform: rotateX(180deg);
+            z-index: 5;
+        }
+
+        .envelope-letter {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s, opacity 0.5s ease 0.4s;
+        }
+
+        .envelope-letter.slide-up {
+            transform: translateY(-80px) scale(1.02);
+        }
+
+        @keyframes sealPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
+            50% { transform: scale(1.06); box-shadow: 0 0 25px rgba(212, 175, 55, 0.7); }
+        }
+
+        .seal-btn {
+            animation: sealPulse 2.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-cream-100 text-charcoal font-sans antialiased selection:bg-gold-100 selection:text-gold-700 min-h-screen relative overflow-x-hidden">
+
+    <div id="envelopeOverlay" class="fixed inset-0 z-[100] bg-cream-100 flex flex-col items-center justify-center p-4 transition-all duration-1000 ease-in-out">
+        <!-- Floating sparkles in opening screen -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="absolute top-12 left-10 text-gold-400/40 text-3xl animate-float">✨</div>
+            <div class="absolute bottom-16 right-12 text-gold-400/40 text-3xl animate-float" style="animation-delay: 1.5s;">⭐</div>
+        </div>
+
+        <!-- Envelope Container -->
+        <div class="relative w-full max-w-sm perspective-1000 my-auto text-center">
+            
+            <p class="font-serif text-gold-700 text-xl font-semibold mb-6 tracking-wide animate-pulse">
+                Сизге чакыруу кат бар!
+            </p>
+
+            <!-- 3D Outer Envelope Wrapper -->
+            <div id="envelopeWrapper" class="relative w-80 sm:w-88 h-56 mx-auto bg-cream-200 rounded-2xl shadow-2xl border-2 border-gold-300/80 overflow-visible flex items-center justify-center transition-all duration-700">
+                
+                <!-- Envelope Flap (Top Triangle) -->
+                <div id="envelopeFlap" class="envelope-flap absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-cream-300 to-cream-200 border-b border-gold-300/60 rounded-t-2xl shadow-sm flex items-center justify-center">
+                    <!-- Kyrgyz Ornament Stamp Pattern on Flap -->
+                    <svg class="w-12 h-12 text-gold-500/40 opacity-70" viewBox="0 0 100 100" fill="currentColor">
+                        <path d="M50,15 C35,15 25,25 25,38 C25,50 35,55 42,50 C48,46 45,36 38,36 C33,36 31,40 31,42 C31,33 38,22 50,22 C62,22 69,33 69,42 C69,40 67,36 62,36 C55,36 52,46 58,50 C65,55 75,50 75,38 C75,25 65,15 50,15 Z"/>
+                    </svg>
+                </div>
+
+                <!-- Envelope Body Pocket Front Layer -->
+                <div class="absolute inset-0 z-20 bg-gradient-to-t from-cream-300 via-cream-200 to-transparent rounded-b-2xl pointer-events-none border-t border-gold-200/40"></div>
+
+                <!-- Letter Inside Envelope -->
+                <div id="envelopeLetter" class="envelope-letter absolute inset-x-3 bottom-3 top-4 bg-white rounded-xl shadow-md z-10 border border-gold-200 p-4 flex flex-col items-center justify-center text-center">
+                    <i class="fa-solid fa-baby text-gold-500 text-2xl mb-1"></i>
+                    <h3 class="font-serif text-lg font-bold text-gold-700">Алиананын Жентек тою</h3>
+                    <p class="text-[11px] text-charcoal/70 uppercase tracking-widest mt-0.5">11-Октябрь • 2026</p>
+                </div>
+
+                <!-- Interactive Gold Wax Stamp Button ("Ачуу") -->
+                <button id="openEnvelopeBtn" class="seal-btn absolute z-40 top-20 w-20 h-20 bg-gradient-to-tr from-gold-700 via-gold-500 to-gold-300 rounded-full shadow-2xl border-4 border-cream-100 flex flex-col items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 focus:outline-none">
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-gold-100"></span>
+                    <span class="font-serif text-base font-bold text-white tracking-wider my-0.5">АЧУУ</span>
+                    <i class="fa-solid fa-envelope-open text-xs text-gold-200"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-charcoal/60 mt-8 font-medium">
+                Чакырууну ачуу үчүн <strong class="text-gold-700">«АЧУУ»</strong> баскычын басыңыз
+            </p>
+        </div>
+    </div>
+
+    <!-- Audio Control Button Floating top-right -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="musicToggleBtn" class="flex items-center gap-2 bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-full border border-gold-300/50 shadow-md text-xs font-medium text-gold-700 hover:bg-white transition-all duration-300">
+            <span id="musicIcon" class="w-5 h-5 flex items-center justify-center rounded-full bg-gold-100 text-gold-600">
+                <i class="fa-solid fa-music"></i>
+            </span>
+            <span id="musicLabel" class="hidden sm:inline">ыр кошуу</span>
+        </button>
+    </div>
+
+    <!-- Soft Decorative Sparkles Floating in Background -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute top-10 left-8 text-gold-300/30 text-2xl animate-float" style="animation-delay: 0s;">✨</div>
+        <div class="absolute top-1/4 right-10 text-blush-300/40 text-3xl animate-float" style="animation-delay: 1.5s;">☁️</div>
+        <div class="absolute top-1/2 left-5 text-gold-300/25 text-2xl animate-float" style="animation-delay: 2.5s;">⭐</div>
+        <div class="absolute top-3/4 right-8 text-blush-300/40 text-3xl animate-float" style="animation-delay: 1s;">☁️</div>
+        <div class="absolute bottom-20 left-12 text-gold-300/30 text-2xl animate-float" style="animation-delay: 3s;">✨</div>
+    </div>
+
+    <main class="relative z-10 max-w-lg mx-auto min-h-screen px-4 py-6 flex flex-col justify-between">
+
+        <!-- Top Ornament Banner -->
+        <section class="text-center pt-8 pb-4 relative">
+            <div class="flex items-center justify-center gap-3 mb-3 text-gold-500 opacity-80">
+                <!-- SVG Kyrgyz Kochkor Müyüz Ornament Left -->
+                <svg class="w-8 h-8" viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M50,15 C35,15 25,25 25,38 C25,50 35,55 42,50 C48,46 45,36 38,36 C33,36 31,40 31,42 C31,33 38,22 50,22 C62,22 69,33 69,42 C69,40 67,36 62,36 C55,36 52,46 58,50 C65,55 75,50 75,38 C75,25 65,15 50,15 Z M50,85 C35,85 25,75 25,62 C25,50 35,45 42,50 C48,54 45,64 38,64 C33,64 31,60 31,58 C31,67 38,78 50,78 C62,78 69,67 69,58 C69,60 67,64 62,64 C55,64 52,54 58,50 C65,45 75,50 75,62 C75,75 65,85 50,85 Z"/>
+                </svg>
+                <span class="text-xs tracking-[0.3em] font-semibold uppercase text-gold-600">Жентек Тойго Чакыруу</span>
+                <!-- SVG Kyrgyz Kochkor Müyüz Ornament Right -->
+                <svg class="w-8 h-8 transform scale-x-[-1]" viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M50,15 C35,15 25,25 25,38 C25,50 35,55 42,50 C48,46 45,36 38,36 C33,36 31,40 31,42 C31,33 38,22 50,22 C62,22 69,33 69,42 C69,40 67,36 62,36 C55,36 52,46 58,50 C65,55 75,50 75,38 C75,25 65,15 50,15 Z M50,85 C35,85 25,75 25,62 C25,50 35,45 42,50 C48,54 45,64 38,64 C33,64 31,60 31,58 C31,67 38,78 50,78 C62,78 69,67 69,58 C69,60 67,64 62,64 C55,64 52,54 58,50 C65,45 75,50 75,62 C75,75 65,85 50,85 Z"/>
+                </svg>
+            </div>
+
+            <!-- Soft Baby Icon Accent -->
+            <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-tr from-blush-200 to-blush-100 rounded-full flex items-center justify-center border-2 border-gold-300 shadow-glow animate-pulse-glow">
+                <i class="fa-solid fa-baby text-gold-600 text-2xl"></i>
+            </div>
+
+            <!-- Opening Main Greeting Text -->
+            <h1 class="font-serif text-3xl sm:text-4xl font-bold leading-tight gold-gradient-text px-2">
+                Алиананын Жентек тоюна чакырабыз!
+            </h1>
+            <p class="font-script text-2xl text-gold-600 mt-2">Балалуу үй — базар</p>
+        </section>
+
+        <!-- Baby Photo Showcase Frame -->
+        <section class="my-6 relative">
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 mx-auto rounded-full p-2 bg-gradient-to-br from-gold-300 via-blush-200 to-gold-500 shadow-card">
+                <!-- Frame Inner Border -->
+                <div class="w-full h-full rounded-full bg-cream-50 p-2 overflow-hidden relative flex items-center justify-center border-2 border-dashed border-gold-400">
+                    
+                    <!-- Decorative Baby Photo Placeholder -->
+                    <div id="babyImageContainer" class="w-full h-full rounded-full overflow-hidden flex flex-col items-center justify-center bg-gradient-to-tr from-blush-100 via-cream-100 to-blush-200 text-center p-6 relative">
+                        
+                        <!-- Soft decorative vector art for baby photo -->
+                        <div class="absolute inset-0 opacity-10 flex items-center justify-center">
+                            <svg class="w-48 h-48 text-gold-600" viewBox="0 0 200 200" fill="currentColor">
+                                <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M100,20 C50,20 20,50 20,100 C20,150 50,180 100,180 C150,180 180,150 180,100 C180,50 150,20 100,20 Z" fill="none" stroke="currentColor" stroke-width="1"/>
+                            </svg>
+                        </div>
+
+                        <!-- Cute Icon Illustration -->
+                        <div class="relative z-10">
+                            <div class="w-20 h-20 mx-auto mb-2 text-gold-500 flex items-center justify-center rounded-full bg-white/80 shadow-sm border border-gold-200">
+                                <i class="fa-solid fa-child-dress text-4xl text-gold-500"></i>
+                            </div>
+                            <span class="font-serif text-2xl font-bold text-gold-700 block">Алиана</span>
+                            <span class="text-xs tracking-wider text-charcoal/70 uppercase mt-1 block font-medium">11-Октябрь • 2026</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decorative corner ornaments on photo badge -->
+                <div class="absolute -top-1 -right-1 text-gold-500 text-xl"><i class="fa-solid fa-crown"></i></div>
+                <div class="absolute -bottom-2 -left-2 text-gold-500 text-xl"><i class="fa-solid fa-heart"></i></div>
+            </div>
+        </section>
+
+        <!-- Live Countdown Timer -->
+        <section class="bg-white/80 backdrop-blur-sm rounded-2xl p-5 my-4 border border-gold-300/40 shadow-soft text-center">
+            <h3 class="text-xs uppercase tracking-widest text-gold-600 font-semibold mb-3 flex items-center justify-center gap-2">
+                <i class="fa-regular fa-clock"></i> Тойго чейин калды:
+            </h3>
+
+            <div class="grid grid-cols-4 gap-2 text-center" id="countdown">
+                <div class="bg-cream-100 rounded-xl p-2 border border-gold-200">
+                    <span id="days" class="font-serif text-2xl sm:text-3xl font-bold text-gold-700 block">00</span>
+                    <span class="text-[10px] text-charcoal/70 uppercase font-medium">күн</span>
+                </div>
+                <div class="bg-cream-100 rounded-xl p-2 border border-gold-200">
+                    <span id="hours" class="font-serif text-2xl sm:text-3xl font-bold text-gold-700 block">00</span>
+                    <span class="text-[10px] text-charcoal/70 uppercase font-medium">саат</span>
+                </div>
+                <div class="bg-cream-100 rounded-xl p-2 border border-gold-200">
+                    <span id="minutes" class="font-serif text-2xl sm:text-3xl font-bold text-gold-700 block">00</span>
+                    <span class="text-[10px] text-charcoal/70 uppercase font-medium">мүнөт</span>
+                </div>
+                <div class="bg-cream-100 rounded-xl p-2 border border-gold-200">
+                    <span id="seconds" class="font-serif text-2xl sm:text-3xl font-bold text-gold-700 block">00</span>
+                    <span class="text-[10px] text-charcoal/70 uppercase font-medium">секунд</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Warm Invitation Message Section -->
+        <section class="bg-cream-50 rounded-2xl p-6 my-4 border border-gold-300/50 shadow-card text-center relative overflow-hidden">
+            <!-- Background Ornament Corner SVG -->
+            <div class="absolute -top-6 -left-6 w-20 h-20 text-gold-200/40 pointer-events-none">
+                <svg viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M10,10 L90,10 L90,90 Z"/>
+                </svg>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold text-gold-700 mb-3">Ардактуу меймандар!</h2>
+            
+            <p class="text-sm leading-relaxed text-charcoal/90 font-normal mb-4">
+                Ар бир үйдө баланын күлкүсү жаңырып, кубаныч жана бакыт өкүм сүрсүн! 
+            </p>
+            <p class="text-sm leading-relaxed text-charcoal/90 font-normal">
+                Биздин үй-бүлөбүздүн периштеси, эрке кызыбыз <strong class="text-gold-700 font-serif font-bold text-base">АЛИАНАНЫН</strong> Жентек тоюна арналган ак дасторконубузга келип, аруу тилек, ак батаңызды берип кетишиңиздерди чың жүрөктөн чакырабыз!
+            </p>
+
+            <!-- Decorative Divider -->
+            <div class="flex items-center justify-center gap-2 my-4 text-gold-400">
+                <div class="h-px bg-gold-300 w-12"></div>
+                <i class="fa-solid fa-star text-xs"></i>
+                <div class="h-px bg-gold-300 w-12"></div>
+            </div>
+
+            <p class="font-script text-xl text-gold-600">
+                Сиздерди урматтоо менен: Ата-энеси жана бир туугандары
+            </p>
+        </section>
+
+        <!-- Event Details Card -->
+        <section class="bg-white rounded-2xl p-6 my-4 border border-gold-300/60 shadow-card text-center relative">
+            <h2 class="font-serif text-2xl font-bold text-gold-700 mb-5 flex items-center justify-center gap-2">
+                <span>Тойдун убактысы & дареги</span>
+            </h2>
+
+            <div class="space-y-4">
+                <!-- Date Item -->
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-cream-100 border border-gold-200/60">
+                    <div class="w-12 h-12 rounded-full bg-gold-500 text-white flex items-center justify-center text-xl shrink-0 shadow-md">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-xs text-charcoal/60 uppercase font-semibold block">Күнү</span>
+                        <span class="font-serif text-lg font-bold text-charcoal">11-Октябрь, 2026-жыл</span>
+                    </div>
+                </div>
+
+                <!-- Time Item -->
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-cream-100 border border-gold-200/60">
+                    <div class="w-12 h-12 rounded-full bg-gold-500 text-white flex items-center justify-center text-xl shrink-0 shadow-md">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-xs text-charcoal/60 uppercase font-semibold block">Сааты</span>
+                        <span class="font-serif text-lg font-bold text-charcoal">Саат 14:00де башталат</span>
+                    </div>
+                </div>
+
+                <!-- Venue Item -->
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-cream-100 border border-gold-200/60">
+                    <div class="w-12 h-12 rounded-full bg-gold-500 text-white flex items-center justify-center text-xl shrink-0 shadow-md">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-xs text-charcoal/60 uppercase font-semibold block">Өткөрүлүүчү жер</span>
+                        <span class="font-serif text-lg font-bold text-gold-700 block">Кафе «Салт»</span>
+                        <span class="text-xs text-charcoal/80 block mt-0.5">Бишкек шаары, Ауэзова көчөсү 27/3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- "Даректи көрүү" Google Maps Button -->
+            <div class="mt-6 space-y-2">
+                <a href="https://maps.google.com/?cid=8848710364327212480&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 text-white font-semibold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all transform active:scale-95 text-sm uppercase tracking-wider">
+                    <i class="fa-solid fa-map-location-dot text-base"></i>
+                    <span>Даректи көрүү (Google Maps)</span>
+                </a>
+                
+                <a href="https://2gis.kg/bishkek/search/Бишкек%20Ауэзова%2027%2F3" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   class="w-full inline-flex items-center justify-center gap-2 bg-cream-200/80 text-gold-700 font-semibold py-2.5 px-4 rounded-xl border border-gold-300 hover:bg-cream-200 transition-all text-xs">
+                    <i class="fa-solid fa-location-arrow"></i>
+                    <span>2GIS картадан ачуу</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- RSVP Form Section -->
+        <section class="bg-white/90 rounded-2xl p-6 my-4 border border-gold-300/60 shadow-card">
+            <div class="text-center mb-4">
+                <h2 class="font-serif text-2xl font-bold text-gold-700">Катышууңузду ырастаңыз</h2>
+                <p class="text-xs text-charcoal/70 mt-1">Келериңизди алдын ала билдирип коюуңузду өтүнөбүз</p>
+            </div>
+
+            <form id="rsvpForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-charcoal/80 mb-1">
+                        Аты-жөнүңүз:
+                    </label>
+                    <input type="text" id="guestName" required placeholder="Мис: Асан & Айгүл" 
+                           class="w-full px-4 py-3 rounded-xl border border-gold-300/70 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-cream-50/50 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-charcoal/80 mb-1">
+                        Катышууңуз:
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gold-300 cursor-pointer bg-cream-50 hover:bg-gold-50 transition-all">
+                            <input type="radio" name="attendance" value="yes" checked class="accent-gold-600">
+                            <span class="text-xs font-semibold text-charcoal">Ооба, барабыз</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gold-300 cursor-pointer bg-cream-50 hover:bg-gold-50 transition-all">
+                            <input type="radio" name="attendance" value="no" class="accent-gold-600">
+                            <span class="text-xs font-semibold text-charcoal">бара албайбыз</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-charcoal/80 mb-1">
+                        Канча киши болуп келесиз?
+                    </label>
+                    <select id="guestCount" class="w-full px-4 py-3 rounded-xl border border-gold-300/70 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-cream-50/50 text-sm">
+                        <option value="1">1 киши</option>
+                        <option value="2" selected>2 киши</option>
+                        <option value="3">3 киши</option>
+                        <option value="4+">4 же андан көп</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-charcoal/80 mb-1">
+                        Ак тилек & Каалооңуз (милдеттүү эмес):
+                    </label>
+                    <textarea id="guestMessage" rows="2" placeholder="Алианага каалоо-тилегиңиз..." 
+                              class="w-full px-4 py-2.5 rounded-xl border border-gold-300/70 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-cream-50/50 text-sm resize-none"></textarea>
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-gold-600 hover:bg-gold-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Жөнөтүү</span>
+                </button>
+            </form>
+
+            <div id="rsvpSuccessMsg" class="hidden text-center py-6">
+                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-2xl mb-2">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h4 class="font-serif text-xl font-bold text-gold-700">Ырахмат! Жообуңуз кабыл алынды.</h4>
+                <p class="text-xs text-charcoal/70 mt-1">Сизди тойдо күтөбүз!</p>
+            </div>
+        </section>
+
+        <!-- Final Section -->
+        <section class="text-center py-8 relative">
+            <div class="w-16 h-16 mx-auto mb-3 text-gold-500 opacity-80">
+                <svg viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M50,10 C27.6,10 9.5,28.1 9.5,50 C9.5,71.9 27.6,90 50,90 C72.4,90 90.5,71.9 90.5,50 C90.5,28.1 72.4,10 50,10 Z M50,82 C32.3,82 17.5,67.7 17.5,50 C17.5,32.3 32.3,18 50,18 C67.7,18 82.5,32.3 82.5,50 C82.5,67.7 67.7,82 50,82 Z"/>
+                    <path d="M50,25 L55,40 L70,40 L58,50 L62,65 L50,55 L38,65 L42,50 L30,40 L45,40 Z"/>
+                </svg>
+            </div>
+
+            <h2 class="font-serif text-2xl sm:text-3xl font-bold gold-gradient-text mb-2">
+                Сиздерди чыдамсыздык менен күтөбүз!
+            </h2>
+            <p class="text-xs text-charcoal/70 tracking-widest uppercase font-medium">
+                Алиана & Анын үй-бүлөсү
+            </p>
+
+            <div class="mt-6 text-[11px] text-charcoal/40">
+                <p>2026 • Жентек Той Салтанаты</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Web Audio API Synthesizer for soft background lullaby melody (no external mp3 dependency required!)
+        class GentleLullabyAudio {
+            constructor() {
+                this.ctx = null;
+                this.isPlaying = false;
+                this.timer = null;
+                this.noteIndex = 0;
+                // Soft pentatonic soothing cradle melody
+                this.notes = [
+                    261.63, 329.63, 392.00, 523.25, 392.00, 329.63, // C4, E4, G4, C5, G4, E4
+                    293.66, 349.23, 440.00, 523.25, 440.00, 349.23, // D4, F4, A4, C5, A4, F4
+                    261.63, 329.63, 392.00, 493.88, 392.00, 329.63  // C4, E4, G4, B4, G4, E4
+                ];
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+
+            playTone(freq, duration = 1.2) {
+                if (!this.ctx || this.ctx.state === 'suspended') return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine'; // Soft gentle sine wave bell tone
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+                // Gentle attack and soft fade decay
+                gain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.08, this.ctx.currentTime + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+
+            start() {
+                this.init();
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+                this.isPlaying = true;
+                this.scheduleNextNote();
+            }
+
+            stop() {
+                this.isPlaying = false;
+                if (this.timer) clearTimeout(this.timer);
+            }
+
+            scheduleNextNote() {
+                if (!this.isPlaying) return;
+                const freq = this.notes[this.noteIndex];
+                this.playTone(freq, 1.8);
+                this.noteIndex = (this.noteIndex + 1) % this.notes.length;
+                this.timer = setTimeout(() => this.scheduleNextNote(), 800);
+            }
+
+            toggle() {
+                if (this.isPlaying) {
+                    this.stop();
+                    return false;
+                } else {
+                    this.start();
+                    return true;
+                }
+            }
+        }
+
+        const lullabySynth = new GentleLullabyAudio();
+
+        // Music Toggle Event
+        const musicBtn = document.getElementById('musicToggleBtn');
+        const musicIcon = document.getElementById('musicIcon');
+        const musicLabel = document.getElementById('musicLabel');
+
+        musicBtn.addEventListener('click', () => {
+            const active = lullabySynth.toggle();
+            if (active) {
+                musicIcon.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                musicBtn.classList.add('border-gold-500', 'bg-gold-50');
+                musicLabel.textContent = 'Обон өчүрүү';
+            } else {
+                musicIcon.innerHTML = '<i class="fa-solid fa-music"></i>';
+                musicBtn.classList.remove('border-gold-500', 'bg-gold-50');
+                musicLabel.textContent = 'Обон кошуу';
+            }
+        });
+
+        // Target Date: 11 October 2026 at 14:00
+        const eventDate = new Date('2026-10-11T14:00:00+06:00').getTime();
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = eventDate - now;
+
+            if (distance < 0) {
+                document.getElementById('days').innerText = "00";
+                document.getElementById('hours').innerText = "00";
+                document.getElementById('minutes').innerText = "00";
+                document.getElementById('seconds').innerText = "00";
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('days').innerText = days < 10 ? '0' + days : days;
+            document.getElementById('hours').innerText = hours < 10 ? '0' + hours : hours;
+            document.getElementById('minutes').innerText = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('seconds').innerText = seconds < 10 ? '0' + seconds : seconds;
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        const envelopeOverlay = document.getElementById('envelopeOverlay');
+        const openEnvelopeBtn = document.getElementById('openEnvelopeBtn');
+        const envelopeFlap = document.getElementById('envelopeFlap');
+        const envelopeLetter = document.getElementById('envelopeLetter');
+
+        openEnvelopeBtn.addEventListener('click', () => {
+            // Hide stamp button smoothly
+            openEnvelopeBtn.style.opacity = '0';
+            openEnvelopeBtn.style.transform = 'scale(0.5)';
+            openEnvelopeBtn.style.pointerEvents = 'none';
+
+            // 1. Open envelope flap
+            envelopeFlap.classList.add('open');
+
+            // 2. Slide letter card upwards out of envelope
+            setTimeout(() => {
+                envelopeLetter.classList.add('slide-up');
+            }, 300);
+
+            // 3. Trigger celebratory confetti
+            setTimeout(() => {
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 70,
+                        spread: 80,
+                        origin: { y: 0.5 },
+                        colors: ['#D4AF37', '#B8860B', '#FAF6F0', '#FFFFFF']
+                    });
+                }
+            }, 600);
+
+            // 4. Fade out opening screen overlay completely
+            setTimeout(() => {
+                envelopeOverlay.classList.add('opacity-0', 'pointer-events-none');
+                
+                // Attempt soft audio playing upon opening
+                try {
+                    lullabySynth.start();
+                    musicIcon.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                    musicBtn.classList.add('border-gold-500', 'bg-gold-50');
+                    musicLabel.textContent = 'Обон өчүрүү';
+                } catch(e) {
+                    console.log('Audio autoplay prevented');
+                }
+            }, 1200);
+
+            // Completely remove overlay element from DOM after transition
+            setTimeout(() => {
+                envelopeOverlay.style.display = 'none';
+            }, 2300);
+        });
+
+        const rsvpForm = document.getElementById('rsvpForm');
+        const rsvpSuccessMsg = document.getElementById('rsvpSuccessMsg');
+
+        rsvpForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('guestName').value.trim();
+            if (!name) return;
+
+            // Trigger visual celebratory confetti explosion
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#D4AF37', '#B8860B', '#FDF0ED', '#FFFFFF']
+                });
+            }
+
+            // Hide form and show success confirmation
+            rsvpForm.classList.add('hidden');
+            rsvpSuccessMsg.classList.remove('hidden');
+        });
+
+        // Helper function to escape HTML string
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+    </script>
+</body>
+</html>
